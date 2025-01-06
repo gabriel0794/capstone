@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const ScanRFID = () => {
     const [rfidNumber, setRfidNumber] = useState('');
@@ -7,32 +7,58 @@ const ScanRFID = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const fetchPetData = async () => {
+    // Function to fetch pet data when the RFID number changes
+    useEffect(() => {
         if (!rfidNumber) {
-            setError('RFID number cannot be empty');
+            setData(null); // Reset data when RFID number is empty
             return;
         }
 
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(`http://192.168.1.9:5000/api/pets/rfid/${rfidNumber}`);  // ilisi lang og ip kailangan and I think kailangan giud ni haha
-            if (!response.ok) {
-                throw new Error('Failed to fetch data');
+        const fetchPetData = async () => {
+            // Check if RFID number is exactly 5 digits
+            if (rfidNumber.length !== 5 || isNaN(rfidNumber)) {
+                setError('RFID is incorrect (should be 5 digits)');
+                setData(null);
+                return;
             }
 
-            const result = await response.json();
-            setData(result);
-        } catch (err) {
-            setError('Error fetching data');
-        } finally {
-            setLoading(false);
-        }
-    };
+            setLoading(true);
+            setError(null);
+
+            try {
+                const response = await fetch(`http://192.168.1.9:5000/api/pets/rfid/${rfidNumber}`);
+                
+                if (!response.ok) {
+                    setError('Failed to fetch data');
+                    setData(null);
+                    return;
+                }
+
+                const result = await response.json();
+
+                // Log the result for debugging
+                console.log('API Response:', result);
+
+                // Check if pet data is found
+                if (!result || !result.petName) {
+                    setError('RFID number is not registered');
+                    setData(null);
+                    return;
+                }
+
+                setData(result);
+            } catch (err) {
+                setError('Error fetching data');
+                setData(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPetData();
+    }, [rfidNumber]); // Effect runs when rfidNumber changes
 
     const refreshScan = () => {
-        // Reset the input and the data state to allow another scan
         setRfidNumber('');
         setData(null);
         setError(null);
@@ -40,16 +66,13 @@ const ScanRFID = () => {
 
     return (
         <View style={styles.container}>
-          <Text style={styles.header}>Pet Information</Text>
+            <Text style={styles.header}>Pet Information</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Scan RFID tag"
                 value={rfidNumber}
                 onChangeText={setRfidNumber}
             />
-            <TouchableOpacity style={styles.button} onPress={fetchPetData}>
-                <Text style={styles.buttonText}>Fetch Pet Data</Text>
-            </TouchableOpacity>
             
             {loading && <Text>Loading...</Text>}
 
@@ -61,9 +84,25 @@ const ScanRFID = () => {
                     <Text style={{ fontSize: 20 }}>Owner: {data.ownerName}</Text>
                     <Text style={{ fontSize: 20 }}>Contact: {data.contact}</Text>
                     <Text style={{ fontSize: 20 }}>Address: {data.address}</Text>
-                    <Text style={{ fontSize: 20 }}>Latest Vaccine: {data.vaccinationType}</Text>
                     <Text style={{ fontSize: 20 }}>Pet Type: {data.petType}</Text>
                     <Text style={{ fontSize: 20 }}>Breed: {data.breed1} / {data.breed2}</Text>
+
+                    {data.vaccinationHistory && Array.isArray(data.vaccinationHistory) && data.vaccinationHistory.length > 0 ? (
+                        <View style={styles.vaccinationHistory}>
+                            <Text style={styles.historyHeader}>Vaccination History:</Text>
+                            {data.vaccinationHistory
+                                .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date in descending order
+                                .map((vaccination, index) => (
+                                    <View key={index} style={styles.historyItem}>
+                                        <Text style={{ fontSize: 18 }}>
+                                            {`Date: ${new Date(vaccination.date).toLocaleDateString()} - Type: ${vaccination.vaccinationType}`}
+                                        </Text>
+                                    </View>
+                                ))}
+                        </View>
+                    ) : (
+                        <Text>No vaccination history available.</Text>
+                    )}
                 </View>
             )}
 
@@ -82,8 +121,8 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     header: {
-      fontSize: 40,
-      marginBottom: 20
+        fontSize: 40,
+        marginBottom: 20
     },
     input: {
         height: 40,
@@ -100,14 +139,29 @@ const styles = StyleSheet.create({
     error: {
         color: 'red',
     },
-    buttonText: {
-      color: 'white'
+    vaccinationHistory: {
+        marginTop: 20,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        padding: 10,
+        width: '100%',
+    },
+    historyHeader: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    historyItem: {
+        marginBottom: 5,
     },
     button: {
-      borderRadius: 15,
-      marginTop: 10,
-      backgroundColor: 'green',
-      padding: 15
+        borderRadius: 15,
+        marginTop: 10,
+        backgroundColor: 'green',
+        padding: 15
+    },
+    buttonText: {
+        color: 'white'
     }
 });
 

@@ -15,9 +15,8 @@ router.get('/rfid/:rfid', async (req, res) => {
             return res.status(404).send("Pet not found");
         }
 
-        // Get the last vaccination type if available
-        const lastVaccination = pet.vaccinationHistory?.slice(-1)[0];
-        const vaccinationType = lastVaccination ? lastVaccination.vaccinationType : 'No vaccination records found';
+        // Sort vaccinationHistory by date in descending order (latest first)
+        const sortedVaccinationHistory = pet.vaccinationHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         // Prepare response with pet and user data
         const responseData = {
@@ -25,7 +24,7 @@ router.get('/rfid/:rfid', async (req, res) => {
             ownerName: pet.ownerId.name,  // Retrieved from the `User` model via populate
             contact: pet.contact,         // Contact number from the `User` model
             address: pet.address,         // Address from the `User` model
-            vaccinationType: vaccinationType, // Last vaccination type from Pet model
+            vaccinationHistory: sortedVaccinationHistory, // Sorted vaccination history
             petName: pet.name,            // Pet's name from the `Pet` model
             petType: pet.petType,         // Pet type (dog/cat)
             breed1: pet.breed1,           // Breed 1
@@ -39,6 +38,5 @@ router.get('/rfid/:rfid', async (req, res) => {
         res.status(500).send("Server error");
     }
 });
-
 
 export default router;
