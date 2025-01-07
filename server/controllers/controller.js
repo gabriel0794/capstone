@@ -161,13 +161,14 @@ export const updatePet = async (req, res) => {
     }
 };
 
+
 // Add vaccination history
-export const updatePetVaccinationHistory = async (req, res) => {
+export const updatePetDetails = async (req, res) => {
     const { id } = req.params;
-    const { vaccinationHistory } = req.body;
+    const { vaccinationHistory, status } = req.body;
 
     try {
-        const pet = await Pets.findByIdAndUpdate(id, { vaccinationHistory }, { new: true })
+        const pet = await Pets.findByIdAndUpdate(id, { vaccinationHistory, status }, { new: true })
         if (!pet) {
             return res.status(404).json({ message: "Pet not found" });
         }

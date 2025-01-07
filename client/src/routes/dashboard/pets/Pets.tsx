@@ -39,6 +39,7 @@ const Pets = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [userRole, setUserRole] = useState<string | null>(null) // Track the user's role
   const navigate = useNavigate()
+  const [statusFilter, setStatusFilter] = useState<string>("")
 
   const filteredPets = pets.filter((pet) => {
     const petName = pet.name.toLowerCase()
@@ -50,14 +51,18 @@ const Pets = () => {
 
     const searchLower = searchQuery.toLowerCase()
 
-    return (
+    const matchesSearchQuery =
       petName.includes(searchLower) ||
       petStatus.includes(searchLower) ||
       petType.includes(searchLower) ||
       petRfidNumber.includes(searchLower) ||
       standardPetDOB.toLowerCase().includes(searchLower) ||
       zeroOmittedPetDOB.includes(searchLower)
-    )
+
+    const matchesStatusFilter =
+      statusFilter === "" || pet.status === statusFilter
+
+    return matchesSearchQuery && matchesStatusFilter
   })
 
   // Generate a formatted date for search
@@ -76,7 +81,6 @@ const Pets = () => {
     setUserRole(userDetails.role)
     const userId = userDetails.id
 
-
     const fetchPets = async () => {
       try {
         const token = localStorage.getItem("token")
@@ -88,9 +92,9 @@ const Pets = () => {
         let url = ""
 
         // if (userDetails.role === "pet_owner") {
-          // url = "http://localhost:5000/api/pets/owner"
+        // url = "http://localhost:5000/api/pets/owner"
         // } else if (userDetails.role === "doctor") {
-          url = "http://localhost:5000/api/pets"
+        url = "http://localhost:5000/api/pets"
         // }
 
         if (url) {
@@ -105,7 +109,11 @@ const Pets = () => {
 
           console.log(data)
           if (Array.isArray(data)) {
-            setPets(userDetails.role === "doctor" ? data : data.filter((pet: Pet) => pet.ownerId._id === userId))
+            setPets(
+              userDetails.role === "doctor"
+                ? data
+                : data.filter((pet: Pet) => pet.ownerId._id === userId)
+            )
           } else {
             console.error("Data is not an array:", data)
           }
@@ -174,7 +182,7 @@ const Pets = () => {
 
         <Separator />
 
-        <div className="md:flex flex-col md:mr-4 mt-10">
+        <div className="md:flex flex items-end md:mr-4 mt-10">
           <div className="md:w-full justify-between items-center">
             <p className="font-semibold text-lg">Pets</p>
             <p className="tracking-tight text-neutral-500 mb-2">
@@ -193,6 +201,17 @@ const Pets = () => {
               />
             </div>
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded px-2 py-1 w-32 shadow-lg h-10 font-medium"
+          >
+            <option value="">All</option>
+            <option value="Active" className="text-green-800">
+              Active
+            </option>
+            <option value="Inactive">Inactive</option>
+          </select>
         </div>
 
         <div className="text-black px-6 font-sans lg:py-0 border rounded-lg bg-white shadow-lg mt-8 cursor-default text-sm">

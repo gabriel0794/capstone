@@ -10,6 +10,7 @@ export const EditPetDetails = () => {
   const editDetails = useEditDetails()
 
   const [name, setName] = useState("")
+  const [status, setStatus] = useState("")
   const [vaccinationHistory, setVaccinationHistory] = useState<any>([])
   const [vaccinationType, setVaccinationType] = useState("")
   const [vaccinationDate, setVaccinationDate] = useState<any>("")
@@ -19,6 +20,9 @@ export const EditPetDetails = () => {
     if (editDetails?.pet?.name) setName(editDetails?.pet?.name)
     if (editDetails?.pet?.vaccinationHistory) {
       setVaccinationHistory(editDetails?.pet?.vaccinationHistory as [])
+    }
+    if (editDetails?.pet?.vaccinationHistory) {
+      setStatus(editDetails?.pet?.status)
     }
   }, [editDetails])
 
@@ -36,8 +40,9 @@ export const EditPetDetails = () => {
       const token = localStorage.getItem("token")
 
       const response = await axios.put(
-        `http://localhost:5000/api/pets/vaccine/${editDetails.pet._id}`,
+        `http://localhost:5000/api/pets/details/${editDetails.pet._id}`,
         {
+          status,
           vaccinationHistory,
         },
         {
@@ -90,6 +95,17 @@ export const EditPetDetails = () => {
                 <span className="block">{name}</span>
               </div>
             </span>
+            <div className="flex flex-col gap-y-2 w-full">
+              <Label>Status</Label>
+              <select
+                className="border rounded px-1 py-0.5"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
             <span className="block">
               <div className="flex items-center gap-x-4 mb-2">
                 <h2 className="font-semibold">Vaccination History</h2>

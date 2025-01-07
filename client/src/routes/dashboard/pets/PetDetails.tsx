@@ -429,7 +429,7 @@ const PetDetails = () => {
             onClick={openEditPetDetailsModal}
             className="rounded-md bg-neutral-800 px-3.5 py-2.5 text-sm font-semibold text-white dark:text-white shadow-sm hover:bg-neutral-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
           >
-            Edit Pet Vaccination History
+            Edit Pet Details
           </button>
         </div>
         <div className="w-full flex gap-2 flex-1 h-fit">

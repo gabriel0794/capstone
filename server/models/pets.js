@@ -35,8 +35,8 @@ const petSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ['alive', 'deceased'],
-        default: 'alive'
+        enum: ['active', 'inactive'],
+        default: 'active'
     },
     dob: {
         type: Date,

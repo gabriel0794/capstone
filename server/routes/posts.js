@@ -4,7 +4,7 @@ import {
     getPets, createPet, updatePet, deletePet,
     getUsers, createUser, updateUser, login,
     getVisits, createVisit, updateVisit, addPetComment, getPetComments, removePetComment, getPetsByOwner,
-    updatePetVaccinationHistory,
+    updatePetDetails,
     fetchPet
 } from '../controllers/controller.js';
 
@@ -16,7 +16,7 @@ router.get('/pets', auth, getPets);
 router.get('/pet/:id', auth, fetchPet);
 router.post('/pets', auth, createPet);
 router.put('/pets/:id', auth, updatePet);
-router.put('/pets/vaccine/:id', auth, updatePetVaccinationHistory);
+router.put('/pets/details/:id', auth, updatePetDetails);
 router.get('/pets/owner', auth, getPetsByOwner);
 router.delete('/pets/:id', auth, deletePet);
 
