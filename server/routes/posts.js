@@ -5,7 +5,11 @@ import {
     getUsers, createUser, updateUser, login,
     getVisits, createVisit, updateVisit, addPetComment, getPetComments, removePetComment, getPetsByOwner,
     updatePetDetails,
-    fetchPet
+    fetchPet, createPersonnel,
+    getAllPersonnel,
+    getPersonnelById,
+    updatePersonnel,
+    deletePersonnel, loginPersonnel
 } from '../controllers/controller.js';
 
 const router = express.Router();
@@ -38,5 +42,14 @@ router.put('/users/:id', auth, updateUser);
 router.get('/visits', auth, getVisits);
 router.post('/visits', auth, createVisit);
 router.put('/visits/:id', auth, updateVisit);
+
+// Personnel routes
+router.post('/personnel/signup', createPersonnel);  // Create new personnel
+router.post('/personnel/login', loginPersonnel); // Login and get JWT token
+router.get('/personnel', auth, getAllPersonnel);   // Get all personnel
+router.get('/personnel/:id', auth, getPersonnelById);  // Get personnel by ID
+router.put('/personnel/:id', auth, updatePersonnel);  // Update personnel by ID
+router.delete('/personnel/:id', auth, deletePersonnel);  // Delete personnel by ID
+
 
 export default router;

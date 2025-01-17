@@ -1,37 +1,58 @@
 import express from 'express';
-import Pet from '../models/pets.js';  // Assuming Pet is in the models directory
-import users from '../models/users.js';  // Correct import for 'users'
+import jwt from 'jsonwebtoken';  // Assuming you're using JWT for authentication
+import Pet from '../models/pets.js';
+import Personnel from '../models/personnel.js';  // Personnel model to get personnel info
+import users from '../models/users.js';  // User model for owner data
 
 const router = express.Router();
 
-// Route to get pet data based on RFID
-router.get('/rfid/:rfid', async (req, res) => {
+// Middleware to authenticate the token and set user info in req.user
+const authenticateToken = (req, res, next) => {
+    const token = req.header('Authorization')?.replace('Bearer ', ''); // Extract Bearer token
+
+    if (!token) {
+        return res.status(401).json({ message: 'Access denied. No token provided.' });
+    }
+
     try {
-        // Fetch pet by RFID and populate the ownerId with user data
+        const decoded = jwt.verify(token, 's3cr3t'); // Decode the token using your secret key
+        req.user = decoded; // Add the decoded user data to the request object
+        next(); // Continue to the next middleware or route handler
+    } catch (err) {
+        return res.status(400).json({ message: 'Invalid token.' });
+    }
+};
+
+// Route to get pet data based on RFID with authentication
+router.get('/rfid/:rfid', authenticateToken, async (req, res) => {
+    try {
+        const personnelName = req.user.name;  // Extract the name from the decoded token
+
+        // Find the pet using the provided RFID number and populate the ownerId field with user data
         const pet = await Pet.findOne({ rfidNumber: req.params.rfid }).populate('ownerId');
-        
-        // Handle case where pet is not found
+
         if (!pet) {
-            return res.status(404).send("Pet not found");
+            return res.status(404).json({ error: 'Pet not found' });
         }
 
-        // Sort vaccinationHistory by date in descending order (latest first)
+        // Sort the vaccination history in descending order based on date
         const sortedVaccinationHistory = pet.vaccinationHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Prepare response with pet and user data
+        // Prepare the response data
         const responseData = {
             rfid: pet.rfidNumber,
-            ownerName: pet.ownerId.name,  // Retrieved from the `User` model via populate
-            contact: pet.contact,         // Contact number from the `User` model
-            address: pet.address,         // Address from the `User` model
-            vaccinationHistory: sortedVaccinationHistory, // Sorted vaccination history
-            petName: pet.name,            // Pet's name from the `Pet` model
-            petType: pet.petType,         // Pet type (dog/cat)
-            breed1: pet.breed1,           // Breed 1
-            breed2: pet.breed2,           // Breed 2
+            ownerName: pet.ownerId.name,  // Access owner name from populated ownerId
+            contact: pet.contact,
+            address: pet.address,
+            vaccinationHistory: sortedVaccinationHistory,
+            petName: pet.name,
+            petType: pet.petType,
+            breed1: pet.breed1,
+            breed2: pet.breed2,
+            personnelName: personnelName  // Include the personnel name from the decoded JWT
         };
 
-        // Send the pet data as response
+        // Send the response
         res.json(responseData);
     } catch (error) {
         console.error("Error fetching pet:", error.message);

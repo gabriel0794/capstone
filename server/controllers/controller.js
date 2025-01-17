@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 
 import Pets from '../models/pets.js';
 import User from '../models/users.js';
+import Personnel from '../models/personnel.js';
 import Visit from '../models/visits.js';
 
 const SECRET_KEY = 's3cr3t';
@@ -427,5 +428,116 @@ export const removePetComment = async (req, res) => {
     } catch (error) {
         console.error("Error during MongoDB operation:", error);
         res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+// Create Personnel
+export const createPersonnel = async (req, res) => {
+    const { name, email, contactNumber, password } = req.body;
+
+    try {
+        // Checking if a personnel with the given email already exists in the database.
+        const existingPersonnel = await Personnel.findOne({ email });
+        if (existingPersonnel) {
+            // If a personnel with the same email exists, return a 400 bad request response.
+            return res.status(400).json({ message: 'Personnel already exists' });
+        }
+
+        // Hashing the password for secure storage. The '12' is the salt rounds for bcrypt.
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Creating a new personnel with the provided details and the hashed password.
+        const result = await Personnel.create({ name, email, contactNumber, password: hashedPassword });
+
+        // Generating a JWT token for the new personnel. This token is used for session management.
+        const token = jwt.sign({ email: result.email, id: result._id, role: result.role }, SECRET_KEY, { expiresIn: '1h' });
+
+        // Returning the response with personnel details and the token.
+        res.status(201).json({
+            result: { name: result.name, email: result.email, contactNumber: result.contactNumber },
+            token,  // Send the token to the client
+        });
+    } catch (error) {
+        console.error('Error creating personnel:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Login function to authenticate personnel and return JWT
+export const loginPersonnel = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const personnel = await Personnel.findOne({ email });
+        if (!personnel) {
+            return res.status(404).json({ message: "Personnel not found" });
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password, personnel.password);
+        if (!isPasswordCorrect) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        const token = jwt.sign(
+            { email: personnel.email, id: personnel._id, name: personnel.name, role: personnel.role }, 
+            SECRET_KEY, 
+            { expiresIn: "4h" }
+        );        
+
+        res.status(200).json({ token });
+    } catch (error) {
+        res.status(500).json({ message: "Error logging in personnel", error: error.message });
+    }
+};
+
+
+
+// Get all personnel
+export const getAllPersonnel = async (req, res) => {
+    try {
+        const personnel = await Personnel.find();
+        res.status(200).json(personnel);
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching personnel', error });
+    }
+};
+
+// Get personnel by ID
+export const getPersonnelById = async (req, res) => {
+    try {
+        const personnel = await Personnel.findById(req.params.id);
+        if (!personnel) {
+            return res.status(404).json({ message: 'Personnel not found' });
+        }
+        res.status(200).json(personnel);
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching personnel by ID', error });
+    }
+};
+
+// Update personnel by ID
+export const updatePersonnel = async (req, res) => {
+    try {
+        const updatedPersonnel = await Personnel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updatedPersonnel) {
+            return res.status(404).json({ message: 'Personnel not found' });
+        }
+        res.status(200).json(updatedPersonnel);
+    } catch (error) {
+        res.status(400).json({ message: 'Error updating personnel', error });
+    }
+};
+
+// Delete personnel by ID
+export const deletePersonnel = async (req, res) => {
+    try {
+        const deletedPersonnel = await Personnel.findByIdAndDelete(req.params.id);
+        if (!deletedPersonnel) {
+            return res.status(404).json({ message: 'Personnel not found' });
+        }
+        res.status(200).json({ message: 'Personnel deleted successfully' });
+    } catch (error) {
+        res.status(400).json({ message: 'Error deleting personnel', error });
     }
 };

@@ -67,6 +67,7 @@ const petSchema = new mongoose.Schema({
         required: false,
         match: [/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address!'] // Strict email validation
     },
+    personnel: { type: mongoose.Schema.Types.ObjectId, ref: 'Personnel' }
 });
 
 const Pet = mongoose.model('Pet', petSchema);
